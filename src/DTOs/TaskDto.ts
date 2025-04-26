@@ -1,4 +1,5 @@
 export default interface TaskDto {
+    id?: number
     title?: string
     description?: string
     done?: boolean
