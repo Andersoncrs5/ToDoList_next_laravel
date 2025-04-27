@@ -5,68 +5,79 @@ import Header from "@/Components/Header.component";
 import TaskDto from "@/DTOs/TaskDto";
 import api from "@/services/api";
 import { AxiosResponse } from "axios";
-import { useState } from "react";
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from 'next/navigation';
 import Navigator from "@/services/Navigator";
 
-export default function CreateTask() {
+export default function UpdateTask() {
+    const { id } = useParams<{ id: string }>();
+    const router = useRouter();
+
     const [title, setTitle] = useState<string>('');
     const [description, setDescription] = useState<string>('');
-    const [msgError, setMsgError] = useState<string>('');
+    const [done, setDone] = useState<boolean>(false);
     const [showAlert, setShowAlert] = useState<boolean>(false);
+    const [msgError, setMsgError] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    const router = useRouter();
+
+    useEffect(() => {
+        async function fetchTask() {
+            try {
+                const res: AxiosResponse<TaskDto> = await api.get(`/${id}`);
+                const task = res.data;
+                setTitle(task.title || '' );
+                setDescription(task.description || '' );
+                setDone(task.done || false)
+            } catch (error) {
+                console.error(error);
+                setMsgError('Error loading task.');
+                setShowAlert(true);
+            }
+        }
+
+        if (id) {
+            fetchTask();
+        }
+    }, [id]);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
-        if (!title.trim() || !description.trim()) {
-            setMsgError('Please fill out all fields.');
-            setShowAlert(true);
-            return;
-        }
-
-        const newTask: TaskDto = {
+        const updatedTask: TaskDto = {
             title,
             description,
-            done: false
+            done,
         };
 
         try {
             setIsSubmitting(true);
-            const res: AxiosResponse<any, any> = await api.post('/', newTask);
+            const res: AxiosResponse = await api.put(`/${id}`, updatedTask);
 
-            if (res.status === 201) {
-                setMsgError(res.data); 
+            if (res.status === 200) {
+                setMsgError('Task updated successfully!');
                 setShowAlert(true);
-                clearInputs();
 
                 setTimeout(() => {
                     Navigator.goToHome(router);
-                }, 4000);
+                }, 3000);
             } else {
-                throw new Error('Unexpected response from server.');
+                throw new Error('Unexpected server response.');
             }
 
         } catch (error: any) {
             console.error(error);
-            setMsgError(error.response?.data || 'Error creating task.');
+            setMsgError(error.response?.data || 'Error updating task.');
             setShowAlert(true);
         } finally {
             setIsSubmitting(false);
         }
     }
 
-    function clearInputs() {
-        setTitle('');
-        setDescription('');
-    }
-
     return (
         <div>
-            <Header title="Create new Task" nameBtn="Home" />
+            <Header title="Update Task" nameBtn="Home" />
 
-            {showAlert && <Alert name={msgError} color="green" time={4000} />}
+            {showAlert && <Alert name={msgError} color="green" time={3000} />}
 
             <div className="flex items-center justify-center min-h-screen">
                 <form 
@@ -102,15 +113,12 @@ export default function CreateTask() {
                         <button 
                             type="submit"
                             disabled={isSubmitting}
-                            className={`flex items-center gap-2 bg-green-600 border text-white px-4 py-2 rounded 
+                            className={`flex items-center gap-2 bg-blue-600 border text-white px-4 py-2 rounded 
                             ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-black hover:border'}`}
                         >
                             {isSubmitting ? (
                                 <>
-                                    <svg 
-                                        className="animate-spin h-5 w-5 text-white" 
-                                        viewBox="0 0 24 24"
-                                    >
+                                    <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
                                         <circle 
                                             className="opacity-25" 
                                             cx="12" cy="12" r="10" 
@@ -123,10 +131,10 @@ export default function CreateTask() {
                                             d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                                         ></path>
                                     </svg>
-                                    Processing...
+                                    Updating...
                                 </>
                             ) : (
-                                'SUBMIT'
+                                'UPDATE'
                             )}
                         </button>
                     </div>

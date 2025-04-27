@@ -10,9 +10,11 @@ export default function Header(props: Types) {
     return (
         <header className="grid grid-cols-3 gap-4 p-3 border-2 text-white">
             <div>
-                <h1>{props.title}</h1> 
+                <h1 className="font-serif" >{props.title}</h1> 
             </div>
-            <div></div>
+            <div>
+                
+            </div>
             <div className="text-center" >
                 <BtnDefault color="black" name={props.nameBtn || 'NONE'} url={props.urlBtn || '/' } />
             </div>
